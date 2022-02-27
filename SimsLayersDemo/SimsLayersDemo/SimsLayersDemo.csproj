@@ -95,6 +95,10 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
+    <None Include="Resources\Data\accounts.csv" />
+    <None Include="Resources\Data\clients.csv" />
+    <None Include="Resources\Data\loans.csv" />
+    <None Include="Resources\Data\transactions.csv" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
