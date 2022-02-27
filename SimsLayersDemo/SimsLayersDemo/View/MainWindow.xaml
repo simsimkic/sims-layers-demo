@@ -4,9 +4,20 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SimsLayersDemo"
+        xmlns:view="clr-namespace:SimsLayersDemo.View"
+        xmlns:util="clr-namespace:SimsLayersDemo.View.Util"
+        xmlns:data="clr-namespace:System.Data;assembly=System.Data"
+        xmlns:model="clr-namespace:SimsLayersDemo.View.Model"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        <TextBlock>Hello world!</TextBlock>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="3*"/>
+        </Grid.ColumnDefinitions>
+
+        <util:MenuSideBar Grid.Column="0"/>
+
+        <model:DataView Grid.Column="1"/>
     </Grid>
 </Window>

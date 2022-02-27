@@ -23,6 +23,7 @@ namespace SimsLayersDemo
         public MainWindow()
         {
             InitializeComponent();
+            DataContext = this;
         }
     }
 }
