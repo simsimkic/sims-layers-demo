@@ -9,10 +9,10 @@
     <Border Style="{StaticResource MenuBorder}">
         <StackPanel Style="{StaticResource LightStackPanel}">
             <TextBlock Style="{StaticResource LightBlueMenuTextBlock}" Text=" Transaction Options: "/>
-            <Button Style="{StaticResource MenuButton}" Content="     Add Transaction"/>
+            <Button Style="{StaticResource MenuButton}" Click="AddTransaction_Click" Content="     Add Transaction"/>
 
             <TextBlock Style="{StaticResource LightBlueMenuTextBlock}" Text=" Loan Options: "/>
-            <Button Style="{StaticResource MenuButton}" Content="     Add Loan"/>
+            <Button Style="{StaticResource MenuButton}"  Click="AddLoan_Click" Content="     Add Loan"/>
         </StackPanel>
     </Border>
 </UserControl>

@@ -2,8 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SimsLayersDemo.Exception;
 
 namespace SimsLayersDemo.Model
 {
@@ -15,6 +14,11 @@ namespace SimsLayersDemo.Model
         private List<Transaction> _transactions;
         private List<Loan> _loans;
 
+        private long _clientMaxId;
+        private long _accountMaxId;
+        private long _loanMaxId;
+        private long _transactionMaxId;
+
         private static string _projectPath = System.Reflection.Assembly.GetExecutingAssembly().Location
             .Split(new string[] { "bin" }, StringSplitOptions.None)[0];
 
@@ -23,6 +27,7 @@ namespace SimsLayersDemo.Model
         private string LOAN_FILE = _projectPath + "\\Resources\\Data\\loans.csv";
         private string TRANSACTION_FILE = _projectPath + "\\Resources\\Data\\transactions.csv";
         private const string CSV_DELIMITER = ";";
+        private const string DATETIME_FORMAT = "dd.MM.yyyy.";
 
         public static Bank GetInstance()
         {
@@ -33,6 +38,7 @@ namespace SimsLayersDemo.Model
         private Bank()
         {
             GetAllData();
+            InitializeIds();
         }
 
         public List<Loan> Loans
@@ -122,6 +128,143 @@ namespace SimsLayersDemo.Model
             _loans.ForEach(loan => loan.Client = FindClientById(loan.Client.Id));
         }
 
+        private void InitializeIds()
+        {
+            _accountMaxId = FindAccountsMaxId();
+            _clientMaxId = FindClientsMaxId();
+            _transactionMaxId = FindTransactionsMaxId();
+            _loanMaxId = FindLoansMaxId();
+        }
+
+        private long FindAccountsMaxId()
+        {
+            if (_accounts.Count == 0) return 0;
+            return _accounts.Max(account => account.Id);
+        }
+
+        private long FindClientsMaxId()
+        {
+            if (_accounts.Count == 0) return 0;
+            return _accounts.Max(client => client.Id);
+        }
+
+        private long FindTransactionsMaxId()
+        {
+            if (_accounts.Count == 0) return 0;
+            return _accounts.Max(transaction => transaction.Id);
+        }
+
+        private long FindLoansMaxId()
+        {
+            if (_accounts.Count == 0) return 0;
+            return _accounts.Max(loan => loan.Id);
+        }
+
+        public Transaction Create(Transaction transaction)
+        {
+            ExecuteTransaction(transaction);
+
+            Transaction newTransaction = Save(transaction);
+            SaveAccounts();
+            _transactions.Add(newTransaction);
+            return newTransaction;
+        }
+
+        private void ExecuteTransaction(Transaction transaction)
+        {
+            transaction.Payer.Account.Balance -= transaction.Amount;
+            transaction.Receiver.Account.Balance += transaction.Amount;
+            transaction.Date = DateTime.Now;
+        }
+
+        public Loan Create(Loan loan)
+        {
+            if (IsDeadlineAfterApprovalDate(loan))
+            {
+                loan.NumberOfInstallments = CalculateNumberOfInstallments(loan);
+                loan.InstallmentAmount = CalculateInstallmentAmount(loan);
+                ApproveLoan(loan);
+
+                Loan newLoan = Save(loan);
+                SaveAccounts();
+                _loans.Add(newLoan);
+                return newLoan;
+            }
+            else
+            {
+                throw new InvalidDateException(
+                    $"Deadline: {loan.Deadline} is before approval date: {loan.ApprovalDate}");
+            }
+        }
+
+        private void ApproveLoan(Loan loan)
+        {
+            loan.Client.Account.Balance += loan.Base;
+            loan.ApprovalDate = DateTime.Now;
+        }
+
+        private bool IsDeadlineAfterApprovalDate(Loan loan)
+        {
+            return loan.Deadline > loan.ApprovalDate;
+        }
+
+        private long CalculateNumberOfInstallments(Loan loan)
+        {
+            return ((loan.Deadline.Year - loan.ApprovalDate.Year) * 12) + loan.Deadline.Month - loan.ApprovalDate.Month;
+        }
+
+        private double CalculateInstallmentAmount(Loan loan)
+        {
+            return (loan.Base * (1 + loan.InterestRate / 100)) / loan.NumberOfInstallments;
+        }
+
+        private Transaction Save(Transaction transaction)
+        {
+            transaction.Id = _transactionMaxId++;
+            AppendLineToFile(TRANSACTION_FILE, TransactionToCSVFormat(transaction));
+            return transaction;
+        }
+
+        private Loan Save(Loan loan)
+        {
+            loan.Id = _loanMaxId++;
+            AppendLineToFile(LOAN_FILE, LoanToCSVFormat(loan));
+            return loan;
+        }
+
+        private Client Save(Client client)
+        {
+            client.Account = Save(client.Account);
+            client.Id = _clientMaxId++;
+            AppendLineToFile(CLIENT_FILE, ClientToCSVFormat(client));
+            return client;
+        }
+
+        private Account Save(Account account)
+        {
+            account.Id = _accountMaxId++;
+            AppendLineToFile(ACCOUNT_FILE, AccountToCSVFormat(account));
+            return account;
+        }
+
+        private void AppendLineToFile(string path, string line)
+        {
+            File.AppendAllText(path, line + Environment.NewLine);
+        }
+
+        private void SaveAccounts()
+        {
+            WriteAllLinesToFile(ACCOUNT_FILE,
+                _accounts
+                    .Select(AccountToCSVFormat)
+                    .ToList());
+        }
+
+        private void WriteAllLinesToFile(string path, List<string> content)
+        {
+            File.WriteAllLines(path, content.ToArray());
+        }
+
         private Account CSVFormatToAccount(string acountCSVFormat)
         {
             var tokens = acountCSVFormat.Split(CSV_DELIMITER.ToCharArray());
@@ -163,6 +306,49 @@ namespace SimsLayersDemo.Model
                 long.Parse(tokens[6]),
                 double.Parse(tokens[7]),
                 long.Parse(tokens[8]));
+        }
+
+        private string TransactionToCSVFormat(Transaction transaction)
+        {
+            return string.Join(CSV_DELIMITER,
+                transaction.Id,
+                transaction.Purpose,
+                transaction.Date.ToString(DATETIME_FORMAT),
+                transaction.Amount,
+                transaction.Payer.Id,
+                transaction.Receiver.Id);
+        }
+
+        private string LoanToCSVFormat(Loan loan)
+        {
+            return string.Join(CSV_DELIMITER,
+                loan.Id,
+                loan.Client.Id,
+                loan.ApprovalDate.ToString(DATETIME_FORMAT),
+                loan.Deadline.ToString(DATETIME_FORMAT),
+                loan.Base,
+                loan.InterestRate,
+                loan.NumberOfInstallments,
+                loan.InstallmentAmount,
+                loan.NumberOfPaidInstallments);
+        }
+
+        private string ClientToCSVFormat(Client client)
+        {
+            return string.Join(CSV_DELIMITER,
+                client.Id,
+                client.FirstName,
+                client.LastName,
+                client.DateOfBirth.ToString(DATETIME_FORMAT),
+                client.Account.Id);
+        }
+
+        private string AccountToCSVFormat(Account account)
+        {
+            return string.Join(CSV_DELIMITER,
+                account.Id,
+                account.Number,
+                account.Balance);
         }
     }
 }

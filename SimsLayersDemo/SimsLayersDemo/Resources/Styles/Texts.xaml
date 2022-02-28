@@ -21,4 +21,18 @@
     <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource LightBlueTextBlock}" x:Key="LightBlueDataTextBlock">
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
+
+    <Style TargetType="{x:Type Label}" BasedOn="{StaticResource LightBlueLabel}" x:Key="DialogLightBlueLabel">
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="0,5,0,5"/>
+        <Setter Property="FontSize" Value="15"/>
+    </Style>
+
+    <Style TargetType="{x:Type TextBox}" x:Key="DialogLightBlueTextBox">
+        <Setter Property="Background" Value="{StaticResource LightBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource LightBlueBrush}"/>
+        <Setter Property="BorderBrush" Value="DarkGray"/>
+        <Setter Property="Margin" Value="5"/>
+        <Setter Property="FontSize" Value="15"/>
+    </Style>
 </ResourceDictionary>
