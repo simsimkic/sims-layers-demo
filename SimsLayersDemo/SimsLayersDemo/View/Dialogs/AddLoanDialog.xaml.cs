@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using SimsLayersDemo.Controller;
 using SimsLayersDemo.Exception;
 using SimsLayersDemo.Model;
 using SimsLayersDemo.View.Converter;
@@ -31,7 +32,8 @@ namespace SimsLayersDemo.View.Dialogs
         private double _interestRate;
         private DateTime _deadline;
         private DateTime _deadlineLowerLimit;
-        private Bank _bank;
+        private ClientController _clientController;
+        private LoanController _loanController;
 
         public ObservableCollection<string> Accounts { get; set; }
 
@@ -39,10 +41,12 @@ namespace SimsLayersDemo.View.Dialogs
         {
             InitializeComponent();
             DataContext = this;
-            _bank = Bank.GetInstance();
             _dataView = (Application.Current.MainWindow as MainWindow).GetDataView();
+            var app = Application.Current as App;
+            _clientController = app.ClientController;
+            _loanController = app.LoanController;
 
-            _clients = _bank.Clients;
+            _clients = _clientController.GetAll().ToList();
             Accounts = new ObservableCollection<string>(FindAccountNumbersFromClients());
 
             _deadlineLowerLimit = DateTime.Now.AddMonths(1);
@@ -144,7 +148,7 @@ namespace SimsLayersDemo.View.Dialogs
         {
             try
             {
-                return _bank.Create(new Loan(
+                return _loanController.Create(new Loan(
                     FindClientFromAccountNumber(Client.SelectedItem.ToString()),
                     _deadline,
                     _base,

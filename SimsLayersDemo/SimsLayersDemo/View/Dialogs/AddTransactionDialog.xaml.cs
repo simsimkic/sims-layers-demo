@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using SimsLayersDemo.Controller;
 using SimsLayersDemo.Model;
 using SimsLayersDemo.View.Converter;
 using SimsLayersDemo.View.Model;
@@ -18,7 +19,8 @@ namespace SimsLayersDemo.View.Dialogs
     /// </summary>
     public partial class AddTransactionDialog : Window
     {
-        private Bank _bank;
+        private ClientController _clientController;
+        private TransactionController _transactionController;
         public ObservableCollection<string> PayerAccounts { get; set; }
         public ObservableCollection<string> ReceiverAccounts { get; set; }
 
@@ -34,7 +36,9 @@ namespace SimsLayersDemo.View.Dialogs
             DataContext = this;
             _dataView = (Application.Current.MainWindow as MainWindow).GetDataView();
 
-            _bank = Bank.GetInstance();
+            var app = Application.Current as App;
+            _clientController = app.ClientController;
+            _transactionController = app.TransactionController;
 
             PayerAccounts = new ObservableCollection<string>(FindAccountNumbersFromClients());
             ReceiverAccounts = new ObservableCollection<string>(FindAccountNumbersFromClients());
@@ -42,7 +46,7 @@ namespace SimsLayersDemo.View.Dialogs
 
         private IList<string> FindAccountNumbersFromClients()
         {
-            return _bank.Clients
+            return _clientController.GetAll()
                 .Select(client => client.Account.Number)
                 .ToList();
         }
@@ -104,12 +108,12 @@ namespace SimsLayersDemo.View.Dialogs
                 _amount,
                 FindClientFromAccountNumber(PayerAccount.SelectedItem.ToString()),
                 FindClientFromAccountNumber(ReceiverAccount.SelectedItem.ToString()));
-            return _bank.Create(transaction);
+            return _transactionController.Create(transaction);
         }
 
         private Client FindClientFromAccountNumber(string accountNumber)
         {
-            return _bank.Clients
+            return _clientController.GetAll()
                 .First(client => client.Account.Number.Equals(accountNumber));
         }
 
